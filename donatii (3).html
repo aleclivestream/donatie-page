@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<title>Donații</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root{
+  --bg:#0a0a0a;
+  --surface:#141414;
+  --line:#2a2a2a;
+  --text:#f3f2ee;
+  --muted:#8f8d87;
+  --red:#c8202a;
+  --red-dim:#5e1015;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+
+html,body{height:100%;}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+  padding:24px;
+}
+
+/* particule plutitoare in fundal */
+.particles{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+}
+.particle{
+  position:absolute;
+  bottom:-40px;
+  font-size:18px;
+  opacity:0;
+  animation:rise linear infinite;
+  color:var(--red);
+  filter:drop-shadow(0 0 6px var(--red-dim));
+}
+@keyframes rise{
+  0%{ transform:translateY(0) translateX(0) rotate(0deg); opacity:0; }
+  8%{ opacity:.55; }
+  90%{ opacity:.35; }
+  100%{ transform:translateY(-110vh) translateX(var(--drift,20px)) rotate(360deg); opacity:0; }
+}
+
+.wrap{
+  position:relative;
+  z-index:1;
+  max-width:560px;
+  text-align:center;
+}
+
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  letter-spacing:.25em;
+  color:var(--red);
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+h1{
+  font-family:'Anton',sans-serif;
+  font-weight:400;
+  transform:skewX(-6deg);
+  font-size:clamp(48px,10vw,92px);
+  line-height:.85;
+  letter-spacing:.01em;
+}
+h1 span{color:var(--red);}
+
+.subhead{
+  margin-top:34px;
+  color:var(--muted);
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  line-height:1.6;
+  min-height:22px;
+  transition:color .25s ease;
+  position:relative;
+  cursor:default;
+}
+
+.wink{
+  display:inline-block;
+  margin-left:8px;
+  color:var(--red);
+  font-family:'JetBrains Mono',monospace;
+  text-transform:none;
+  opacity:0;
+  transform:translateY(4px) scale(.7);
+  transition:opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.wink.show{
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
+
+.card{
+  margin-top:48px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:40px 28px;
+  position:relative;
+  overflow:visible;
+  transition:padding .25s ease;
+}
+.card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 50% 0%, var(--red-dim) 0%, transparent 65%);
+  opacity:.5;
+  pointer-events:none;
+}
+
+.label{
+  position:relative;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:18px;
+  height:14px;
+}
+
+#donateBtn{
+  position:relative;
+  z-index:1;
+  font-family:'Anton',sans-serif;
+  font-size:clamp(26px,5vw,38px);
+  letter-spacing:.01em;
+  color:#000;
+  background:var(--red);
+  border:none;
+  border-radius:6px;
+  padding:18px 38px;
+  cursor:pointer;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1), background .25s ease,
+             font-size .3s cubic-bezier(.34,1.2,.64,1), padding .3s cubic-bezier(.34,1.2,.64,1);
+}
+#donateBtn:hover{
+  background:#ff2b38;
+}
+#donateBtn.bump{
+  animation:bump .35s ease;
+}
+@keyframes bump{
+  0%{ transform:scale(1); }
+  35%{ transform:scale(1.12) rotate(-1deg); }
+  60%{ transform:scale(.96) rotate(1deg); }
+  100%{ transform:scale(1); }
+}
+
+#donateBtn.pop{
+  animation:pop .5s cubic-bezier(.36,0,.66,-0.56);
+}
+@keyframes pop{
+  0%{ transform:scale(1); opacity:1; background:var(--red); }
+  45%{ transform:scale(1.35); opacity:0; background:#fff; }
+  55%{ transform:scale(1); opacity:0; }
+  100%{ transform:scale(1); opacity:1; background:var(--red); }
+}
+
+.caption{
+  position:relative;
+  z-index:1;
+  margin-top:16px;
+  font-size:13px;
+  color:var(--muted);
+  min-height:18px;
+  transition:opacity .15s ease;
+}
+
+.footer-note{
+  margin-top:28px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;
+  letter-spacing:.08em;
+  color:var(--muted);
+  opacity:.6;
+}
+
+.less-row{
+  position:relative;
+  z-index:1;
+  margin-top:26px;
+  padding-top:22px;
+  border-top:1px dashed var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+}
+
+#lessBtn{
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  letter-spacing:.04em;
+  color:var(--muted);
+  background:transparent;
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:10px 18px;
+  font-size:13px;
+  cursor:pointer;
+  transition:font-size .25s ease, padding .25s ease, opacity .25s ease,
+             color .2s ease, border-color .2s ease, transform .35s cubic-bezier(.55,0,.85,.45);
+}
+#lessBtn:hover{
+  color:var(--red);
+  border-color:var(--red);
+}
+#lessBtn.shake{
+  animation:shake .35s ease;
+}
+@keyframes shake{
+  0%,100%{ transform:translateX(0); }
+  25%{ transform:translateX(-3px) rotate(-1deg); }
+  75%{ transform:translateX(3px) rotate(1deg); }
+}
+#lessBtn.tossed{
+  animation:toss 1.1s cubic-bezier(.55,0,.85,.45) forwards;
+}
+@keyframes toss{
+  0%{ transform:translate(0,0) rotate(0deg) scale(1); opacity:1; }
+  65%{ transform:translate(var(--toss-x,40px), 10px) rotate(140deg) scale(.75); opacity:1; }
+  100%{ transform:translate(var(--toss-x,40px), 26px) rotate(240deg) scale(0); opacity:0; }
+}
+
+.trash{
+  position:absolute;
+  left:calc(50% + 90px);
+  top:50%;
+  transform:translate(-50%,-160%) scale(.4) rotate(-15deg);
+  font-size:34px;
+  opacity:0;
+  transition:none;
+  filter:grayscale(1) opacity(.85);
+}
+.trash.show{
+  opacity:1;
+  animation:trashDrop .55s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes trashDrop{
+  0%{ transform:translate(-50%,-220%) scale(.3) rotate(-25deg); opacity:0; }
+  60%{ transform:translate(-50%,-40%) scale(1.15) rotate(8deg); opacity:1; }
+  80%{ transform:translate(-50%,-55%) scale(.95) rotate(-4deg); }
+  100%{ transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
+}
+.trash.gulp{
+  animation:gulp .4s ease;
+}
+@keyframes gulp{
+  0%,100%{ transform:translate(-50%,-50%) scale(1) rotate(0deg); }
+  40%{ transform:translate(-50%,-50%) scale(1.35) rotate(-8deg); }
+  70%{ transform:translate(-50%,-50%) scale(.9) rotate(6deg); }
+}
+.trash.instant-hide{
+  transition:none !important;
+  animation:none !important;
+  opacity:0 !important;
+}
+
+.less-caption{
+  margin-top:10px;
+  font-size:11.5px;
+  color:var(--muted);
+  min-height:14px;
+}
+
+.thanks-overlay{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(10,10,10,.97);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .3s ease;
+  z-index:5;
+}
+.thanks-overlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.thanks-text{
+  font-family:'Anton',sans-serif;
+  font-size:clamp(28px,6vw,52px);
+  color:var(--red);
+  transform:skewX(-6deg) scale(.9);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  text-align:center;
+  padding:0 24px;
+}
+.thanks-overlay.show .thanks-text{
+  transform:skewX(-6deg) scale(1);
+}
+
+@media (max-width:480px){
+  .card{padding:32px 18px;}
+}
+
+.stickman-layer{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+  pointer-events:none;
+  z-index:6;
+  opacity:0;
+  display:none;
+}
+.stickman-layer.active{
+  display:block;
+  opacity:1;
+}
+.stickman-group{
+  transform-box:fill-box;
+}
+
+/* paleta tip "muncitor" - piele, tricou albastru-gri, pantaloni denim, casca galbena */
+.sm-torso-block{
+  fill:#5b7a9d;
+  stroke:#2c3e50;
+  stroke-width:1.4;
+}
+.sm-belt{
+  fill:#3a3a3a;
+}
+.sm-head-block{
+  fill:#d9a979;
+  stroke:#8a5a35;
+  stroke-width:1.4;
+}
+.sm-eye{
+  fill:#2c2c2c;
+}
+.sm-mouth{
+  fill:#8a5a35;
+  opacity:.55;
+}
+.sm-arm-block{
+  fill:#d9a979;
+  stroke:#8a5a35;
+  stroke-width:1.3;
+}
+.sm-arm-back{
+  fill:#c79868;
+}
+.sm-hand{
+  fill:#d9a979;
+  stroke:#8a5a35;
+  stroke-width:1.2;
+}
+.sm-leg-block{
+  fill:#3e5570;
+  stroke:#23303f;
+  stroke-width:1.3;
+}
+.sm-leg-back{
+  fill:#33495f;
+}
+.sm-boot{
+  fill:#2a2a2a;
+  stroke:#161616;
+  stroke-width:1;
+}
+.sm-helmet{
+  fill:#f0c93b;
+  stroke:#a8860f;
+  stroke-width:1.4;
+}
+.sm-helmet-brim{
+  fill:#e0b82e;
+  stroke:#a8860f;
+  stroke-width:1;
+}
+.sm-helmet-knob{
+  fill:#e0b82e;
+  stroke:#a8860f;
+  stroke-width:1;
+}
+
+.ghost-btn{
+  position:fixed;
+  z-index:7;
+  pointer-events:none;
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  letter-spacing:.04em;
+  color:var(--muted);
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:4px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+}
+.ghost-btn.active{
+  display:flex;
+}
+
+.hook-layer{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+  pointer-events:none;
+  z-index:6;
+  opacity:0;
+  display:none;
+}
+.hook-layer.active{
+  display:block;
+  opacity:1;
+}
+.hook-group{
+  transform-box:fill-box;
+}
+.rope-line{
+  fill:none;
+  stroke:#cfc09a;
+  stroke-width:2.6;
+  stroke-linecap:round;
+}
+.lasso-loop{
+  fill:none;
+  stroke:#cfc09a;
+  stroke-width:3;
+  stroke-linecap:round;
+}
+.lasso-knot{
+  fill:#8a734f;
+}
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="wrap">
+  <h1>DONAȚII<span>.</span></h1>
+  <p class="subhead" id="subhead"><span id="subheadText">Donațiile nu sunt obligatorii.</span><span class="wink" id="wink">;)</span></p>
+
+  <div class="card">
+    <button id="donateBtn">Donează 5€</button>
+
+    <div class="less-row">
+      <button id="lessBtn">Donează mai puțin</button>
+      <span class="trash" id="trash">🗑️</span>
+    </div>
+  </div>
+
+  <div class="footer-note" id="footerNote">prețul e după suflet.</div>
+</div>
+
+<svg id="stickmanLayer" class="stickman-layer" xmlns="http://www.w3.org/2000/svg">
+  <g id="stickmanGroup" class="stickman-group">
+
+    <!-- picior din spate (se deseneaza primul ca sa fie sub corp la suprapunere) -->
+    <g class="sm-pivot sm-leg-r" transform="translate(5,30)">
+      <rect x="-5" y="0" width="10" height="24" rx="2" class="sm-leg-block sm-leg-back"/>
+      <rect x="-5" y="22" width="10" height="5" rx="1" class="sm-boot"/>
+    </g>
+
+    <!-- brat din spate -->
+    <g class="sm-pivot sm-arm-r" transform="translate(9,-1)">
+      <rect x="-4" y="0" width="8" height="22" rx="2" class="sm-arm-block sm-arm-back"/>
+      <rect x="-4.5" y="19" width="9" height="6" rx="1.5" class="sm-hand"/>
+    </g>
+
+    <!-- corp principal -->
+    <rect x="-9" y="-1" width="18" height="32" rx="2" class="sm-torso-block"/>
+    <rect x="-9" y="6" width="18" height="3" class="sm-belt"/>
+
+    <!-- picior din fata -->
+    <g class="sm-pivot sm-leg-l" transform="translate(-5,30)">
+      <rect x="-5" y="0" width="10" height="24" rx="2" class="sm-leg-block sm-leg-front"/>
+      <rect x="-5" y="22" width="10" height="5" rx="1" class="sm-boot"/>
+    </g>
+
+    <!-- cap -->
+    <rect x="-9" y="-22" width="18" height="18" rx="2" class="sm-head-block"/>
+    <rect x="-4" y="-15" width="3.4" height="3.4" class="sm-eye"/>
+    <rect x="2" y="-15" width="3.4" height="3.4" class="sm-eye"/>
+    <rect x="-3" y="-9" width="7" height="2" rx="1" class="sm-mouth"/>
+
+    <!-- casca de muncitor -->
+    <path d="M -10.5 -22 Q -10.5 -32 0 -32 Q 10.5 -32 10.5 -22 Z" class="sm-helmet"/>
+    <rect x="-10.5" y="-23" width="21" height="3.4" rx="1" class="sm-helmet-brim"/>
+    <rect x="-1.6" y="-32" width="3.2" height="3" class="sm-helmet-knob"/>
+
+    <!-- brat din fata (peste corp, deseneaza-l ultimul ca sa fie vizibil) -->
+    <g class="sm-pivot sm-arm-l" transform="translate(-9,-1)">
+      <rect x="-4" y="0" width="8" height="22" rx="2" class="sm-arm-block sm-arm-front"/>
+      <rect x="-4.5" y="19" width="9" height="6" rx="1.5" class="sm-hand"/>
+    </g>
+  </g>
+</svg>
+
+<div class="ghost-btn" id="ghostBtn">Donează mai puțin</div>
+
+<svg id="hookLayer" class="hook-layer" xmlns="http://www.w3.org/2000/svg">
+  <path id="ropeLine" class="rope-line" d="M0 0 L0 0"/>
+  <g id="hookGroup" class="hook-group">
+    <!-- bucla de lasso, cu nodul de strangere la baza -->
+    <ellipse id="lassoLoop" cx="0" cy="0" rx="13" ry="11" class="lasso-loop"/>
+    <circle cx="0" cy="10" r="2.2" class="lasso-knot"/>
+  </g>
+</svg>
+
+<div class="thanks-overlay" id="thanksOverlay">
+  <div class="thanks-text">Mulțumesc dar nu trebuie.<br>Enjoy Stream</div>
+</div>
+
+<script>
+const btn = document.getElementById('donateBtn');
+const particles = document.getElementById('particles');
+
+const steps = [
+  { amount: 5 },
+  { amount: 10 },
+  { amount: 20 },
+  { amount: 50 },
+  { amount: 100 },
+  { amount: 500 },
+  { amount: 1000 },
+  { amount: 9999 },
+];
+
+let i = 0;
+
+function fmt(n){
+  return n.toLocaleString('ro-RO');
+}
+
+function render(){
+  const s = steps[i];
+  btn.textContent = `Donează ${fmt(s.amount)}€`;
+  btn.classList.remove('bump');
+  void btn.offsetWidth;
+  btn.classList.add('bump');
+}
+
+btn.addEventListener('mouseenter', () => {
+  if (i < steps.length - 1) i++;
+  render();
+  burst();
+});
+
+const thanksOverlay = document.getElementById('thanksOverlay');
+
+btn.addEventListener('click', (e) => {
+  e.preventDefault();
+  thanksActive = true;
+  thanksOverlay.classList.add('show');
+  setTimeout(()=> {
+    thanksOverlay.classList.remove('show');
+    thanksActive = false;
+  }, 1600);
+});
+
+thanksOverlay.addEventListener('click', () => {
+  thanksOverlay.classList.remove('show');
+  thanksActive = false;
+});
+
+let thanksActive = false;
+
+function burst(big){
+  if (thanksActive) return;
+  const symbols = ['♥','€','✦'];
+  const count = big ? 10 : 4;
+  for (let k = 0; k < count; k++){
+    const p = document.createElement('span');
+    p.className = 'particle';
+    p.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+    p.style.left = (Math.random()*100) + 'vw';
+    p.style.fontSize = (14 + Math.random()*14) + 'px';
+    p.style.setProperty('--drift', (Math.random()*80 - 40) + 'px');
+    p.style.animationDuration = (4 + Math.random()*3) + 's';
+    particles.appendChild(p);
+    setTimeout(()=> p.remove(), 7500);
+  }
+}
+
+render();
+// un mic puseu ambiental din când în când, ca pagina sa para vie
+setInterval(()=> burst(false), 3200);
+
+// subtitlu: la incarcare arata 1 secunda mesajul "obligatorii", apoi revine si ramane fix
+const subhead = document.getElementById('subhead');
+const subheadText = document.getElementById('subheadText');
+const wink = document.getElementById('wink');
+
+let subheadLocked = false;
+
+subhead.addEventListener('mouseenter', () => {
+  if (subheadLocked) return;
+  subheadText.textContent = 'Donațiile sunt obligatorii.';
+  subhead.style.color = 'var(--red)';
+});
+
+subhead.addEventListener('mouseleave', () => {
+  if (subheadLocked) return;
+  subheadText.textContent = 'Donațiile nu sunt obligatorii.';
+  subhead.style.color = '';
+
+  subheadLocked = true;
+  wink.classList.add('show');
+
+  setTimeout(() => {
+    wink.classList.remove('show');
+  }, 1400);
+
+  setTimeout(() => {
+    subheadLocked = false;
+  }, 10000);
+});
+
+// butonul "doneaza mai putin" - se micsoreaza progresiv la fiecare click
+const lessBtn = document.getElementById('lessBtn');
+const trash = document.getElementById('trash');
+
+const LESS_TEXT = 'Donează mai puțin';
+const LESS_START_SIZE = 13;
+const LESS_MIN_SIZE = 10;
+const LESS_SIZE_STEP = 0.4;
+
+const LESS_START_PAD_V = 10;
+const LESS_START_PAD_H = 18;
+const LESS_MIN_PAD_V = 6;
+const LESS_MIN_PAD_H = 10;
+
+const RESET_AFTER_MS = 1800;
+
+let lessClicks = 0;
+let lessFrozen = false;
+
+function lessSize(){
+  return Math.max(LESS_MIN_SIZE, LESS_START_SIZE - lessClicks * LESS_SIZE_STEP);
+}
+function lessPadV(){
+  return Math.max(LESS_MIN_PAD_V, LESS_START_PAD_V - lessClicks * 1.2);
+}
+function lessPadH(){
+  return Math.max(LESS_MIN_PAD_H, LESS_START_PAD_H - lessClicks * 2.4);
+}
+
+function renderLess(){
+  lessBtn.textContent = LESS_TEXT;
+  lessBtn.style.fontSize = lessSize() + 'px';
+  lessBtn.style.padding = `${lessPadV()}px ${lessPadH()}px`;
+  lessBtn.classList.remove('shake');
+  void lessBtn.offsetWidth;
+  lessBtn.classList.add('shake');
+}
+
+// dimensiunile reale ale butonului mare, in pixeli, ca sa creasca frumos
+const BTN_START_FONT = 38;
+const BTN_FONT_STEP = 9;
+const BTN_MAX_FONT = 110;
+
+const BTN_START_PAD_V = 18;
+const BTN_START_PAD_H = 38;
+const BTN_PAD_STEP = 4;
+
+let bigFont = BTN_START_FONT;
+let bigPadV = BTN_START_PAD_V;
+let bigPadH = BTN_START_PAD_H;
+
+function growBigButton(){
+  bigFont += BTN_FONT_STEP;
+  bigPadV += BTN_PAD_STEP;
+  bigPadH += BTN_PAD_STEP * 1.6;
+
+  if (bigFont >= BTN_MAX_FONT){
+    btn.classList.remove('pop');
+    void btn.offsetWidth;
+    btn.classList.add('pop');
+    burst(true);
+
+    bigFont = BTN_START_FONT;
+    bigPadV = BTN_START_PAD_V;
+    bigPadH = BTN_START_PAD_H;
+
+    setTimeout(() => {
+      btn.style.fontSize = bigFont + 'px';
+      btn.style.padding = `${bigPadV}px ${bigPadH}px`;
+    }, 225);
+
+    setTimeout(() => {
+      tossLessButton();
+    }, 260);
+    return;
+  }
+
+  btn.style.fontSize = bigFont + 'px';
+  btn.style.padding = `${bigPadV}px ${bigPadH}px`;
+}
+
+function resetBigButton(){
+  bigFont = BTN_START_FONT;
+  bigPadV = BTN_START_PAD_V;
+  bigPadH = BTN_START_PAD_H;
+  btn.classList.remove('pop');
+  btn.style.fontSize = '';
+  btn.style.padding = '';
+}
+
+btn.addEventListener('animationend', (e) => {
+  if (e.animationName === 'pop'){
+    btn.classList.remove('pop');
+  }
+});
+
+const stickmanLayer = document.getElementById('stickmanLayer');
+const stickmanGroup = document.getElementById('stickmanGroup');
+const ghostBtn = document.getElementById('ghostBtn');
+const hookLayer = document.getElementById('hookLayer');
+const ropeLine = document.getElementById('ropeLine');
+const hookGroup = document.getElementById('hookGroup');
+const lassoLoop = document.getElementById('lassoLoop');
+
+const smArmL = stickmanGroup.querySelector('.sm-arm-l');
+const smArmR = stickmanGroup.querySelector('.sm-arm-r');
+const smLegL = stickmanGroup.querySelector('.sm-leg-l');
+const smLegR = stickmanGroup.querySelector('.sm-leg-r');
+
+function rotatePivot(el, baseX, baseY, angle){
+  el.setAttribute('transform', `translate(${baseX},${baseY}) rotate(${angle})`);
+}
+
+function easeInOutQuad(t){
+  return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2) / 2;
+}
+function easeOutQuad(t){
+  return 1 - Math.pow(1-t, 2);
+}
+function easeRun(t){
+  // accelerare scurta la start, apoi viteza aproape constanta - simuleaza alergarea
+  return t < 0.18 ? easeOutQuad(t / 0.18) * 0.18 : 0.18 + (t - 0.18) * (1/0.82) * 0.82;
+}
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+// franghia lasso-ului: o curba simpla intre mana stickman-ului si bucla, cu o usoara lasare
+function updateRope(x1, y1, x2, y2){
+  const dist = Math.hypot(x2 - x1, y2 - y1);
+  const sag = Math.min(20, dist * 0.14);
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2 + sag;
+  ropeLine.setAttribute('d', `M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`);
+}
+
+function clearRope(){
+  ropeLine.setAttribute('d', 'M0 0 L0 0');
+}
+
+// simuleaza rotatia buclei (vazuta din lateral, ca un cerc care se invarte in jurul axei sale)
+// prin oscilarea razei verticale intre plata si rotunda
+function spinLoop(phase, baseRx, baseRy){
+  const squash = Math.abs(Math.cos(phase));
+  lassoLoop.setAttribute('rx', baseRx);
+  lassoLoop.setAttribute('ry', Math.max(1.5, baseRy * squash));
+}
+
+function resetLoop(rx, ry){
+  lassoLoop.setAttribute('rx', rx);
+  lassoLoop.setAttribute('ry', ry);
+}
+
+function setStickman(x, y, scale, flip, bob, tilt){
+  const by = y + (bob || 0);
+  const t = tilt || 0;
+  stickmanGroup.setAttribute(
+    'transform',
+    `translate(${x},${by}) rotate(${flip ? -t : t}) scale(${flip ? -scale : scale},${scale})`
+  );
+}
+
+// pivoturi reale: umeri la (+-9,-1), solduri la (+-5,30)
+const ARM_PIVOT_Y = -1;
+const LEG_PIVOT_Y = 30;
+
+function walkCycle(t, legsOnly){
+  // alergare: picior fata si brat opus merg impreuna, amplitudine mare, ca o fuga reala
+  const phase = t * Math.PI * 2;
+  const legSwing = Math.sin(phase) * 55;
+  const armSwing = Math.sin(phase) * 48;
+
+  rotatePivot(smLegL, -5, LEG_PIVOT_Y, legSwing);
+  rotatePivot(smLegR, 5, LEG_PIVOT_Y, -legSwing);
+
+  if (!legsOnly){
+    rotatePivot(smArmL, -9, ARM_PIVOT_Y, -armSwing);
+    rotatePivot(smArmR, 9, ARM_PIVOT_Y, armSwing);
+  }
+
+  // bob mai pronuntat, dublu pe ciclu (caracteristic alergarii, nu mersului)
+  return Math.abs(Math.sin(phase)) * -7;
+}
+
+function armsUp(amount){
+  // amount: 0 = lasate, 1 = ridicate complet (ducand obiectul)
+  const angle = lerp(0, -155, amount);
+  rotatePivot(smArmL, -9, ARM_PIVOT_Y, angle);
+  rotatePivot(smArmR, 9, ARM_PIVOT_Y, -angle);
+  rotatePivot(smLegL, -5, LEG_PIVOT_Y, 0);
+  rotatePivot(smLegR, 5, LEG_PIVOT_Y, 0);
+}
+
+function animate(duration, drawFn){
+  return new Promise((resolve) => {
+    const start = performance.now();
+    function frame(now){
+      const t = Math.min(1, (now - start) / duration);
+      drawFn(t);
+      if (t < 1){
+        requestAnimationFrame(frame);
+      } else {
+        resolve();
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+async function tossLessButton(){
+  if (lessFrozen) return;
+  lessFrozen = true;
+
+  const btnRect = lessBtn.getBoundingClientRect();
+  const trashRectInit = trash.getBoundingClientRect();
+
+  // afisam cosul cu animatia lui de "drop in" inainte sa vina stickman-ul
+  trash.classList.remove('show', 'gulp', 'instant-hide');
+  void trash.offsetWidth;
+  trash.classList.add('show');
+
+  await new Promise(r => setTimeout(r, 450));
+
+  const trashRect = trash.getBoundingClientRect();
+  const trashCx = trashRect.left + trashRect.width / 2;
+  const trashCy = trashRect.top + trashRect.height / 2;
+  const btnCx = btnRect.left + btnRect.width / 2;
+  const btnCy = btnRect.top + btnRect.height / 2;
+
+  // stickman intra din stanga, la nivelul textului butonului, mergand spre el
+  const groundY = btnCy + 16;
+  const startX = -60;
+  const scale = 2.1;
+
+  stickmanLayer.classList.add('active');
+  setStickman(startX, groundY, scale, false);
+
+  // ghost button initial ascuns, va prelua locul butonului real cand acesta devine invizibil
+  ghostBtn.textContent = LESS_TEXT;
+  ghostBtn.style.fontSize = lessBtn.style.fontSize;
+  ghostBtn.style.padding = lessBtn.style.padding;
+  ghostBtn.style.left = (btnRect.left) + 'px';
+  ghostBtn.style.top = (btnRect.top) + 'px';
+  ghostBtn.style.width = btnRect.width + 'px';
+  ghostBtn.style.height = btnRect.height + 'px';
+
+  // 1) stickman alearga din margine pana langa buton
+  const approachX = btnCx - 210;
+  await animate(1100, (t) => {
+    const x = lerp(startX, approachX, easeRun(t));
+    const bob = walkCycle(t * 5.5);
+    const tilt = Math.min(8, t * 30);
+    setStickman(x, groundY, scale, false, bob, tilt);
+  });
+
+  // 2a) stickman se opreste la distanta; lasso-ul (bucla mica + franghie) atarna in mana, gata de invartit
+  const handOriginX = approachX + 14;
+  const handOriginY = groundY - 32;
+
+  hookLayer.classList.add('active');
+  const hookTargetX = btnCx;
+  const hookTargetY = btnCy;
+
+  resetLoop(13, 11);
+  hookGroup.setAttribute('transform', `translate(${handOriginX},${handOriginY + 14}) scale(1.5)`);
+  updateRope(handOriginX, handOriginY, handOriginX, handOriginY + 14);
+
+  await animate(180, (t) => {
+    const tt = easeInOutQuad(t);
+    const tilt = lerp(8, 3, tt);
+    armsUp(tt * 0.22);
+    setStickman(approachX, groundY, scale, false, 0, tilt);
+  });
+
+  // 2b) invartirea: stickman roteste bucla deasupra mainii de doua ori - asa se ia elan real cu un lasso,
+  // spre deosebire de o simpla fluturare a bratelor
+  const pivotX = handOriginX + 4;
+  const pivotY = handOriginY - 20;
+  const orbitR = 24;
+
+  await animate(620, (t) => {
+    const turns = 2;
+    const phase = t * Math.PI * 2 * turns;
+    const amp = lerp(0.55, 1, t);
+    const lx = pivotX + Math.sin(phase) * orbitR * amp;
+    const ly = pivotY - Math.cos(phase) * orbitR * 0.55 * amp;
+    hookGroup.setAttribute('transform', `translate(${lx},${ly}) scale(1.5)`);
+    spinLoop(phase * 1.7, 13, 11);
+    updateRope(handOriginX, handOriginY, lx, ly);
+    armsUp(0.22 + Math.abs(Math.sin(phase)) * 0.1 * amp);
+  });
+
+  // 2c) eliberarea si zborul: bucla pleaca din varful invartirii spre tinta, pe un arc real,
+  // continuand sa se roteasca in aer in timp ce parcurge distanta (nu doar pe loc)
+  const releaseX = pivotX;
+  const releaseY = pivotY - orbitR * 0.55;
+  const arriveAboveY = hookTargetY - 60;
+
+  await animate(420, (t) => {
+    const tt = easeOutQuad(t);
+    const hx = lerp(releaseX, hookTargetX, tt);
+    const hy = lerp(releaseY, arriveAboveY, tt) - Math.sin(Math.PI * t) * 36;
+    hookGroup.setAttribute('transform', `translate(${hx},${hy}) scale(1.6)`);
+    spinLoop(t * Math.PI * 7, 13, 11);
+    updateRope(handOriginX, handOriginY, hx, hy);
+    armsUp(lerp(0.32, 0.5, t));
+  });
+
+  // 2d) coborarea de sus: bucla, inca larga si rotindu-se, plutea deasupra cuvantului (de la stage 2c) -
+  // acum cade vertical peste el de sus in jos, ca sa se vada limpede ca vine de deasupra si il inconjoara
+  const hookAtTextX = hookTargetX - btnRect.width/2 - btnRect.left;
+  const hookAtTextY = hookTargetY - btnCy;
+
+  const dropFromY = hookTargetY - 60;
+  const looseRx = btnRect.width/2 + 22;
+  const looseRy = btnRect.height/2 + 18;
+  const snugRx = btnRect.width/2 + 4;
+  const snugRy = btnRect.height/2 + 3;
+
+  resetLoop(13, 11);
+  await animate(220, (t) => {
+    const tt = easeOutQuad(t);
+    const hy = lerp(dropFromY, hookTargetY, tt);
+    const sc = lerp(1.6, 1, tt);
+    const rx = lerp(13, looseRx, tt);
+    const ry = lerp(11, looseRy, tt);
+    lassoLoop.setAttribute('rx', rx);
+    lassoLoop.setAttribute('ry', ry);
+    hookGroup.setAttribute('transform', `translate(${hookTargetX},${hy}) scale(${sc})`);
+    updateRope(handOriginX, handOriginY, hookTargetX, hy);
+  });
+
+  // butonul real devine invizibil chiar in momentul in care bucla ajunge la nivelul lui,
+  // ghost-ul ii preia locul exact, ca prinderea sa para continua
+  lessBtn.style.visibility = 'hidden';
+  ghostBtn.classList.add('active');
+  ghostBtn.style.transform = `translate(${hookAtTextX}px, ${hookAtTextY}px) scale(1)`;
+
+  // 2e) strangerea (cinch): bucla se trage usor spre interior, prinzand cuvantul strans
+  await animate(220, (t) => {
+    const tt = easeOutQuad(t);
+    lassoLoop.setAttribute('rx', lerp(looseRx, snugRx, tt));
+    lassoLoop.setAttribute('ry', lerp(looseRy, snugRy, tt));
+    const pulse = lerp(1, 0.95, tt);
+    ghostBtn.style.transform = `translate(${hookAtTextX}px, ${hookAtTextY}px) scale(${pulse})`;
+  });
+  ghostBtn.style.transform = `translate(${hookAtTextX}px, ${hookAtTextY}px) scale(1)`;
+
+  await new Promise(r => setTimeout(r, 180));
+
+  // 2f) tragerea: lasso-ul, cu cuvantul prins inauntru, e tras inapoi spre stickman in mai multe
+  // smucituri (jerks), nu printr-o alunecare continua - asa arata ca e tras cu efort, nu teleportat
+  const pullStartX = hookTargetX, pullStartY = hookTargetY;
+  const jerks = [0.22, 0.5, 0.78, 1];
+  let jerkFromX = pullStartX, jerkFromY = pullStartY, prevP = 0;
+
+  for (const p of jerks){
+    const segStartX = jerkFromX, segStartY = jerkFromY;
+    const targetX = lerp(pullStartX, handOriginX, p);
+    const targetY = lerp(pullStartY, handOriginY, p);
+    const segDur = 95 + (p - prevP) * 380;
+
+    await animate(segDur, (t) => {
+      const tt = easeOutQuad(t);
+      const hx = lerp(segStartX, targetX, tt);
+      const hy = lerp(segStartY, targetY, tt);
+
+      const globalT = lerp(prevP, p, tt);
+      lassoLoop.setAttribute('rx', lerp(snugRx, 9, globalT));
+      lassoLoop.setAttribute('ry', lerp(snugRy, 7.5, globalT));
+      hookGroup.setAttribute('transform', `translate(${hx},${hy}) scale(1)`);
+      updateRope(handOriginX, handOriginY, hx, hy);
+
+      const gx = hx - btnRect.width/2 - btnRect.left;
+      const gy = hy - btnCy;
+      ghostBtn.style.transform = `translate(${gx}px, ${gy}px) scale(${lerp(1, 0.9, globalT)})`;
+
+      armsUp(lerp(0.5, 1, globalT));
+    });
+
+    jerkFromX = targetX; jerkFromY = targetY; prevP = p;
+    await new Promise(r => setTimeout(r, 35));
+  }
+
+  hookLayer.classList.remove('active');
+  clearRope();
+
+  // ridicarea finala spre pozitia de cărat deasupra capului
+  await animate(260, (t) => {
+    const tt = easeInOutQuad(t);
+    armsUp(1);
+    const handY = lerp(handOriginY, groundY - 46, tt);
+    const gx = handOriginX - btnRect.width/2 - btnRect.left;
+    ghostBtn.style.transform = `translate(${gx}px, ${handY - btnCy}px)`;
+  });
+
+  await new Promise(r => setTimeout(r, 150));
+
+  // 3) stickman alearga spre cos, ducand butonul ridicat deasupra capului
+  const arriveX = trashCx - 28;
+  await animate(1000, (t) => {
+    const tt = easeRun(t);
+    const x = lerp(approachX, arriveX, tt);
+    const handY = groundY - 46;
+    const bob = walkCycle(t * 6, true);
+    const tilt = Math.min(6, t * 24);
+    armsUp(1);
+    setStickman(x, groundY, scale, true, bob, tilt);
+    const ghostX = x + 30 - btnRect.width/2 - btnRect.left;
+    ghostBtn.style.transform = `translate(${ghostX}px, ${handY - btnCy + bob}px)`;
+  });
+
+  await new Promise(r => setTimeout(r, 150));
+
+  // 4) aruncarea propriu-zisa: arcul butonului catre interiorul cosului
+  const throwStartX = arriveX + 30 - btnRect.width/2 - btnRect.left;
+  const throwStartY = (groundY - 46) - btnCy;
+  const throwEndX = trashCx - btnRect.width/2 - btnRect.left;
+  const throwEndY = trashCy - btnCy;
+
+  await animate(650, (t) => {
+    const tt = t;
+    const arcLift = -90 * Math.sin(Math.PI * t);
+    const x = lerp(throwStartX, throwEndX, tt);
+    const y = lerp(throwStartY, throwEndY, tt) + arcLift;
+    const rot = lerp(0, 380, tt);
+    const sc = lerp(1, 0.25, easeInOutQuad(t));
+    ghostBtn.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sc})`;
+    ghostBtn.style.opacity = t > 0.75 ? String(1 - (t-0.75)/0.25) : '1';
+
+    // bratele stickman-ului "elibereaza" obiectul in prima parte a aruncarii
+    if (t < 0.3){
+      armsUp(1 - t/0.3*0.4);
+    }
+  });
+
+  ghostBtn.classList.remove('active');
+  ghostBtn.style.opacity = '1';
+
+  // gulp-ul cosului exact cand ajunge butonul, apoi dispare instant
+  trash.classList.remove('gulp', 'instant-hide');
+  void trash.offsetWidth;
+  trash.classList.add('gulp');
+
+  setTimeout(() => {
+    trash.classList.add('instant-hide');
+  }, 400);
+
+  // 5) stickman alearga si se retrage din scena
+  await new Promise(r => setTimeout(r, 120));
+  const exitX = window.innerWidth + 80;
+  await animate(950, (t) => {
+    const x = lerp(arriveX, exitX, easeRun(t));
+    const bob = walkCycle(t * 6 + 0.5);
+    const tilt = Math.min(8, t * 30);
+    setStickman(x, groundY, scale, true, bob, tilt);
+  });
+
+  stickmanLayer.classList.remove('active');
+
+  setTimeout(resetLessButton, RESET_AFTER_MS);
+}
+
+function resetLessButton(){
+  lessClicks = 0;
+  lessFrozen = false;
+
+  lessBtn.style.visibility = '';
+  lessBtn.classList.remove('tossed');
+  lessBtn.style.fontSize = lessSize() + 'px';
+  lessBtn.style.padding = `${lessPadV()}px ${lessPadH()}px`;
+  lessBtn.textContent = LESS_TEXT;
+
+  ghostBtn.style.transform = '';
+  hookLayer.classList.remove('active');
+  clearRope();
+
+  trash.classList.remove('show');
+  trash.classList.remove('gulp');
+  trash.classList.remove('instant-hide');
+}
+
+function triggerLess(){
+  if (lessFrozen) return;
+
+  lessClicks++;
+  renderLess();
+  growBigButton();
+  burst();
+}
+
+lessBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  triggerLess();
+});
+
+lessBtn.style.fontSize = lessSize() + 'px';
+lessBtn.style.padding = `${lessPadV()}px ${lessPadH()}px`;
+</script>
+
+</body>
+</html>
