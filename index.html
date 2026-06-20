@@ -420,37 +420,80 @@ h1 span{color:var(--red);}
   display:flex;
 }
 
-.hook-layer{
+/* gaura de glont */
+.bullet-hole{
+  position:fixed;
+  z-index:8;
+  pointer-events:none;
+  display:none;
+  width:0;
+  height:0;
+}
+.bullet-hole.active{
+  display:block;
+}
+
+/* explozie */
+@keyframes explode-scale{
+  0%{ transform:translate(-50%,-50%) scale(0); opacity:1; }
+  40%{ transform:translate(-50%,-50%) scale(1.3); opacity:1; }
+  70%{ transform:translate(-50%,-50%) scale(1.6); opacity:.7; }
+  100%{ transform:translate(-50%,-50%) scale(2.2); opacity:0; }
+}
+@keyframes spark-fly{
+  0%{ transform:translate(0,0) scale(1); opacity:1; }
+  100%{ transform:translate(var(--sx),var(--sy)) scale(0); opacity:0; }
+}
+.explosion-layer{
   position:fixed;
   inset:0;
   width:100vw;
   height:100vh;
   pointer-events:none;
-  z-index:6;
-  opacity:0;
+  z-index:9;
   display:none;
 }
-.hook-layer.active{
+.explosion-layer.active{
   display:block;
-  opacity:1;
 }
-.hook-group{
-  transform-box:fill-box;
+
+/* fum dupa explozie */
+@keyframes smoke-rise{
+  0%{ transform:translate(-50%,-50%) scale(.4); opacity:.6; }
+  60%{ transform:translate(-50%,-80%) scale(1.4); opacity:.3; }
+  100%{ transform:translate(-50%,-110%) scale(2); opacity:0; }
 }
-.rope-line{
-  fill:none;
-  stroke:#cfc09a;
-  stroke-width:2.6;
-  stroke-linecap:round;
+
+/* pistol flash */
+.gun-flash{
+  position:absolute;
+  width:18px;
+  height:18px;
+  background:radial-gradient(circle, #fff 0%, #ffdd00 40%, transparent 70%);
+  border-radius:50%;
+  opacity:0;
+  pointer-events:none;
 }
-.lasso-loop{
-  fill:none;
-  stroke:#cfc09a;
-  stroke-width:3;
-  stroke-linecap:round;
+.gun-flash.fire{
+  animation:flash-anim .12s ease-out forwards;
 }
-.lasso-knot{
-  fill:#8a734f;
+@keyframes flash-anim{
+  0%{ opacity:1; transform:scale(.5); }
+  40%{ opacity:1; transform:scale(1.4); }
+  100%{ opacity:0; transform:scale(.8); }
+}
+
+/* glontul in zbor */
+.bullet-proj{
+  position:fixed;
+  z-index:8;
+  width:8px;
+  height:4px;
+  background:#d4c87a;
+  border-radius:50% 30% 30% 50%;
+  pointer-events:none;
+  display:none;
+  transform-origin:center center;
 }
 </style>
 </head>
@@ -520,13 +563,29 @@ h1 span{color:var(--red);}
 
 <div class="ghost-btn" id="ghostBtn">Donează mai puțin</div>
 
-<svg id="hookLayer" class="hook-layer" xmlns="http://www.w3.org/2000/svg">
-  <path id="ropeLine" class="rope-line" d="M0 0 L0 0"/>
-  <g id="hookGroup" class="hook-group">
-    <!-- bucla de lasso, cu nodul de strangere la baza -->
-    <ellipse id="lassoLoop" cx="0" cy="0" rx="13" ry="11" class="lasso-loop"/>
-    <circle cx="0" cy="10" r="2.2" class="lasso-knot"/>
+<!-- pistol vizibil in mana stickman-ului, randat deasupra -->
+<svg id="gunLayer" style="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:7;display:none;" xmlns="http://www.w3.org/2000/svg">
+  <g id="gunGroup">
+    <!-- corp pistol -->
+    <rect x="-14" y="-4" width="22" height="9" rx="2" fill="#2a2a2a" stroke="#111" stroke-width="1"/>
+    <!-- teava -->
+    <rect x="8" y="-3" width="12" height="5" rx="1" fill="#1a1a1a" stroke="#111" stroke-width="1"/>
+    <!-- maner -->
+    <rect x="-11" y="4" width="8" height="11" rx="2" fill="#3a2a1a" stroke="#111" stroke-width="1"/>
+    <!-- garda tragaci -->
+    <path d="M -6 5 Q -4 10 -1 9" fill="none" stroke="#2a2a2a" stroke-width="1.5"/>
+    <!-- tragaci -->
+    <rect x="-4" y="5" width="2" height="6" rx="1" fill="#1a1a1a"/>
+    <!-- flash la teavă -->
+    <circle id="gunFlash" cx="20" cy="-1" r="9" fill="radial-gradient(circle,#fff,#ffdd00)" opacity="0"/>
   </g>
+</svg>
+
+<!-- glont in zbor -->
+<div id="bulletProj" class="bullet-proj"></div>
+
+<!-- layer explozie SVG -->
+<svg id="explosionLayer" class="explosion-layer" xmlns="http://www.w3.org/2000/svg">
 </svg>
 
 <div class="thanks-overlay" id="thanksOverlay">
@@ -705,8 +764,13 @@ function growBigButton(){
     bigPadH = BTN_START_PAD_H;
 
     setTimeout(() => {
+      // resetam marimea INSTANT (fara tranzitia CSS de .3s), ca layout-ul paginii
+      // sa fie deja revenit la starea initiala inainte sa calculam pozitia gaurii de glont
+      btn.style.transition = 'none';
       btn.style.fontSize = bigFont + 'px';
       btn.style.padding = `${bigPadV}px ${bigPadH}px`;
+      void btn.offsetWidth;
+      btn.style.transition = '';
     }, 225);
 
     setTimeout(() => {
@@ -737,10 +801,11 @@ btn.addEventListener('animationend', (e) => {
 const stickmanLayer = document.getElementById('stickmanLayer');
 const stickmanGroup = document.getElementById('stickmanGroup');
 const ghostBtn = document.getElementById('ghostBtn');
-const hookLayer = document.getElementById('hookLayer');
-const ropeLine = document.getElementById('ropeLine');
-const hookGroup = document.getElementById('hookGroup');
-const lassoLoop = document.getElementById('lassoLoop');
+const gunLayer = document.getElementById('gunLayer');
+const gunGroup = document.getElementById('gunGroup');
+const gunFlash = document.getElementById('gunFlash');
+const bulletProj = document.getElementById('bulletProj');
+const explosionLayer = document.getElementById('explosionLayer');
 
 const smArmL = stickmanGroup.querySelector('.sm-arm-l');
 const smArmR = stickmanGroup.querySelector('.sm-arm-r');
@@ -763,30 +828,175 @@ function easeRun(t){
 }
 function lerp(a, b, t){ return a + (b - a) * t; }
 
-// franghia lasso-ului: o curba simpla intre mana stickman-ului si bucla, cu o usoara lasare
-function updateRope(x1, y1, x2, y2){
-  const dist = Math.hypot(x2 - x1, y2 - y1);
-  const sag = Math.min(20, dist * 0.14);
-  const midX = (x1 + x2) / 2;
-  const midY = (y1 + y2) / 2 + sag;
-  ropeLine.setAttribute('d', `M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`);
+// pozitioneaza pistolul EXACT in mana din fata a stickman-ului: replica acelasi lant de
+// transformari ca bratul real (translate corp -> inclinare -> scara/oglindire -> pivot brat ->
+// rotatia bratului -> offset pana la mana), ca pistolul sa ramana lipit de mana la orice unghi,
+// nu doar cand bratul atarna in jos
+function positionGunInHand(x, by, scale, flip, tiltDeg, armAngleDeg){
+  const tiltSigned = flip ? -tiltDeg : tiltDeg;
+  const flipSign = flip ? -1 : 1;
+  // rotate(90) corecteaza axa proprie a desenului pistolului (teava era aliniata cu axa
+  // gresita) ca teava sa fie indreptata pe directia in care e intins bratul (spre tinta),
+  // nu in sus
+  gunGroup.setAttribute('transform',
+    `translate(${x},${by}) rotate(${tiltSigned}) scale(${flipSign * scale},${scale}) translate(-9,${ARM_PIVOT_Y}) rotate(${armAngleDeg}) translate(0,22) scale(0.55) rotate(90)`
+  );
 }
 
-function clearRope(){
-  ropeLine.setAttribute('d', 'M0 0 L0 0');
+// citeste, dupa pozitionare, locul real (in pixeli de ecran) al varfului tevii - de aici pleaca glontul
+function gunMuzzleScreenPos(){
+  const ctm = gunGroup.getScreenCTM();
+  if (!ctm) return {x:0, y:0};
+  const pt = new DOMPoint(20, -0.5).matrixTransform(ctm);
+  return {x: pt.x, y: pt.y};
 }
 
-// simuleaza rotatia buclei (vazuta din lateral, ca un cerc care se invarte in jurul axei sale)
-// prin oscilarea razei verticale intre plata si rotunda
-function spinLoop(phase, baseRx, baseRy){
-  const squash = Math.abs(Math.cos(phase));
-  lassoLoop.setAttribute('rx', baseRx);
-  lassoLoop.setAttribute('ry', Math.max(1.5, baseRy * squash));
+// declanseaza flash la teava pistolului (animatie SVG rapida)
+function fireFlash(){
+  gunFlash.setAttribute('opacity', '1');
+  gunFlash.animate([
+    {opacity:1, r:9},
+    {opacity:1, r:14},
+    {opacity:0, r:8}
+  ], {duration:110, easing:'ease-out', fill:'forwards'}).onfinish = () => {
+    gunFlash.setAttribute('opacity', '0');
+  };
 }
 
-function resetLoop(rx, ry){
-  lassoLoop.setAttribute('rx', rx);
-  lassoLoop.setAttribute('ry', ry);
+// creeaza gaura de glont la pozitia data
+function createBulletHole(cx, cy){
+  // creaza un grup SVG cu gaura de glont peste buton
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.style.cssText = `position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:10;`;
+  // gaura neagra centrala
+  const hole = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  hole.setAttribute('cx', cx); hole.setAttribute('cy', cy); hole.setAttribute('r', '7');
+  hole.setAttribute('fill', '#000'); hole.setAttribute('stroke', '#1a1a1a'); hole.setAttribute('stroke-width', '1');
+  // crapaturi radiale
+  const cracks = document.createElementNS('http://www.w3.org/2000/svg','g');
+  const crackAngles = [0,38,72,115,152,195,238,280,320];
+  crackAngles.forEach(a => {
+    const rad = a * Math.PI/180;
+    const len = 10 + Math.random()*14;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', cx + Math.cos(rad)*7); line.setAttribute('y1', cy + Math.sin(rad)*7);
+    line.setAttribute('x2', cx + Math.cos(rad)*(7+len)); line.setAttribute('y2', cy + Math.sin(rad)*(7+len));
+    line.setAttribute('stroke', '#1a1a1a'); line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('stroke-linecap', 'round');
+    cracks.appendChild(line);
+    // micro-spartura secundara
+    if (Math.random() > 0.4){
+      const a2 = (a + 15 + Math.random()*20) * Math.PI/180;
+      const len2 = 5 + Math.random()*8;
+      const line2 = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line2.setAttribute('x1', cx + Math.cos(rad)*(7+len*0.5)); line2.setAttribute('y1', cy + Math.sin(rad)*(7+len*0.5));
+      line2.setAttribute('x2', cx + Math.cos(a2)*(7+len*0.5+len2)); line2.setAttribute('y2', cy + Math.sin(a2)*(7+len*0.5+len2));
+      line2.setAttribute('stroke', '#111'); line2.setAttribute('stroke-width', '1');
+      line2.setAttribute('stroke-linecap', 'round');
+      cracks.appendChild(line2);
+    }
+  });
+  // inel de impact
+  const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', '10');
+  ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', '#333'); ring.setAttribute('stroke-width', '2'); ring.setAttribute('opacity', '0.6');
+  svg.appendChild(ring);
+  svg.appendChild(cracks);
+  svg.appendChild(hole);
+  document.body.appendChild(svg);
+  return svg;
+}
+
+// creeaza explozia de particule la pozitia data
+function triggerExplosion(cx, cy){
+  explosionLayer.style.display = 'block';
+
+  const colors = ['#ff4400','#ff8800','#ffcc00','#ff2200','#ffee55','#fff'];
+  const particleCount = 28;
+
+  // inel de foc central
+  const fireRing = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  fireRing.setAttribute('cx', cx); fireRing.setAttribute('cy', cy); fireRing.setAttribute('r', '8');
+  fireRing.setAttribute('fill', '#ff6600'); fireRing.setAttribute('opacity', '0.9');
+  explosionLayer.appendChild(fireRing);
+
+  // sparks radiale
+  for(let k=0; k<particleCount; k++){
+    const angle = (k / particleCount) * Math.PI * 2 + Math.random()*0.3;
+    const dist = 30 + Math.random() * 80;
+    const size = 2 + Math.random() * 6;
+    const isCircle = Math.random() > 0.4;
+    let el;
+    if(isCircle){
+      el = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      el.setAttribute('cx', cx); el.setAttribute('cy', cy);
+      el.setAttribute('r', size/2);
+    } else {
+      el = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      el.setAttribute('x', cx-size/2); el.setAttribute('y', cy-size/2);
+      el.setAttribute('width', size); el.setAttribute('height', size);
+      el.setAttribute('rx', '1');
+    }
+    el.setAttribute('fill', colors[Math.floor(Math.random()*colors.length)]);
+    el.setAttribute('opacity', '1');
+    explosionLayer.appendChild(el);
+
+    const tx = Math.cos(angle) * dist;
+    const ty = Math.sin(angle) * dist;
+    const dur = 350 + Math.random() * 300;
+    el.animate([
+      {transform:`translate(0,0) scale(1)`, opacity:1},
+      {transform:`translate(${tx}px,${ty}px) scale(0)`, opacity:0}
+    ], {duration:dur, easing:'ease-out', fill:'forwards'});
+  }
+
+  // 3 bulgari mari de foc
+  for(let k=0;k<3;k++){
+    const angle = Math.random()*Math.PI*2;
+    const blob = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    blob.setAttribute('cx', cx); blob.setAttribute('cy', cy);
+    blob.setAttribute('r', 18 + Math.random()*18);
+    blob.setAttribute('fill', k===0 ? '#ff6600' : k===1 ? '#ff3300' : '#ffaa00');
+    blob.setAttribute('opacity', '0.85');
+    explosionLayer.appendChild(blob);
+    const tx2 = Math.cos(angle)*45;
+    const ty2 = Math.sin(angle)*45 - 20;
+    blob.animate([
+      {transform:`translate(0,0) scale(0.1)`, opacity:.9},
+      {transform:`translate(${tx2/2}px,${ty2/2}px) scale(1.2)`, opacity:.7},
+      {transform:`translate(${tx2}px,${ty2}px) scale(1.8)`, opacity:0}
+    ], {duration:500+Math.random()*200, easing:'ease-out', fill:'forwards'});
+  }
+
+  // inel shockwave
+  const shockwave = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  shockwave.setAttribute('cx', cx); shockwave.setAttribute('cy', cy); shockwave.setAttribute('r', '5');
+  shockwave.setAttribute('fill', 'none'); shockwave.setAttribute('stroke', '#ffcc00'); shockwave.setAttribute('stroke-width', '3');
+  explosionLayer.appendChild(shockwave);
+  shockwave.animate([
+    {r:5, opacity:1, strokeWidth:'3'},
+    {r:90, opacity:0, strokeWidth:'0.5'}
+  ], {duration:450, easing:'ease-out', fill:'forwards'});
+
+  // fum dupa
+  setTimeout(()=>{
+    for(let k=0;k<4;k++){
+      const smoke = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      smoke.setAttribute('cx', cx + (Math.random()-0.5)*30); smoke.setAttribute('cy', cy);
+      smoke.setAttribute('r', 12 + Math.random()*10);
+      smoke.setAttribute('fill', '#555'); smoke.setAttribute('opacity', '0.55');
+      explosionLayer.appendChild(smoke);
+      const tx3 = (Math.random()-0.5)*40;
+      smoke.animate([
+        {transform:`translate(0,0) scale(0.3)`, opacity:.55},
+        {transform:`translate(${tx3}px,-60px) scale(1.8)`, opacity:0}
+      ], {duration:900+Math.random()*400, easing:'ease-out', fill:'forwards'});
+    }
+    setTimeout(()=>{
+      while(explosionLayer.firstChild) explosionLayer.removeChild(explosionLayer.firstChild);
+      explosionLayer.style.display='none';
+    }, 1400);
+  }, 250);
 }
 
 function setStickman(x, y, scale, flip, bob, tilt){
@@ -850,40 +1060,21 @@ async function tossLessButton(){
   lessFrozen = true;
 
   const btnRect = lessBtn.getBoundingClientRect();
-  const trashRectInit = trash.getBoundingClientRect();
-
-  // afisam cosul cu animatia lui de "drop in" inainte sa vina stickman-ul
-  trash.classList.remove('show', 'gulp', 'instant-hide');
-  void trash.offsetWidth;
-  trash.classList.add('show');
-
-  await new Promise(r => setTimeout(r, 450));
-
-  const trashRect = trash.getBoundingClientRect();
-  const trashCx = trashRect.left + trashRect.width / 2;
-  const trashCy = trashRect.top + trashRect.height / 2;
   const btnCx = btnRect.left + btnRect.width / 2;
   const btnCy = btnRect.top + btnRect.height / 2;
 
-  // stickman intra din stanga, la nivelul textului butonului, mergand spre el
+  // stickman intra din stanga, la nivelul butonului
   const groundY = btnCy + 16;
   const startX = -60;
   const scale = 2.1;
 
   stickmanLayer.classList.add('active');
+  gunLayer.style.display = 'none';     // pistolul NU se vede cat timp alearga
+  gunGroup.setAttribute('opacity', '0');
   setStickman(startX, groundY, scale, false);
 
-  // ghost button initial ascuns, va prelua locul butonului real cand acesta devine invizibil
-  ghostBtn.textContent = LESS_TEXT;
-  ghostBtn.style.fontSize = lessBtn.style.fontSize;
-  ghostBtn.style.padding = lessBtn.style.padding;
-  ghostBtn.style.left = (btnRect.left) + 'px';
-  ghostBtn.style.top = (btnRect.top) + 'px';
-  ghostBtn.style.width = btnRect.width + 'px';
-  ghostBtn.style.height = btnRect.height + 'px';
-
-  // 1) stickman alearga din margine pana langa buton
-  const approachX = btnCx - 210;
+  // 1) stickman alearga din margine pana la distanta de tragere - fara pistol in mana
+  const approachX = btnCx - 180;
   await animate(1100, (t) => {
     const x = lerp(startX, approachX, easeRun(t));
     const bob = walkCycle(t * 5.5);
@@ -891,212 +1082,92 @@ async function tossLessButton(){
     setStickman(x, groundY, scale, false, bob, tilt);
   });
 
-  // 2a) stickman se opreste la distanta; lasso-ul (bucla mica + franghie) atarna in mana, gata de invartit
-  const handOriginX = approachX + 14;
-  const handOriginY = groundY - 32;
-
-  hookLayer.classList.add('active');
-  const hookTargetX = btnCx;
-  const hookTargetY = btnCy;
-
-  resetLoop(13, 11);
-  hookGroup.setAttribute('transform', `translate(${handOriginX},${handOriginY + 14}) scale(1.5)`);
-  updateRope(handOriginX, handOriginY, handOriginX, handOriginY + 14);
-
-  await animate(180, (t) => {
+  // 2) stickman se opreste si incepe sa ridice bratul - pistolul tot nu apare inca
+  const AIM_AMOUNT = 0.55;
+  await animate(280, (t) => {
     const tt = easeInOutQuad(t);
-    const tilt = lerp(8, 3, tt);
-    armsUp(tt * 0.22);
+    const tilt = lerp(8, 0, tt);
+    armsUp(tt * AIM_AMOUNT);
     setStickman(approachX, groundY, scale, false, 0, tilt);
   });
 
-  // 2b) invartirea: stickman roteste bucla deasupra mainii de doua ori - asa se ia elan real cu un lasso,
-  // spre deosebire de o simpla fluturare a bratelor
-  const pivotX = handOriginX + 4;
-  const pivotY = handOriginY - 20;
-  const orbitR = 24;
+  // 2b) ULTIMUL CADRU: bratul e complet intins -> pistolul apare brusc, exact in mana,
+  // ca si cum tocmai l-a scos
+  const aimAngle = lerp(0, -155, AIM_AMOUNT);
+  positionGunInHand(approachX, groundY, scale, false, 0, aimAngle);
+  gunLayer.style.display = 'block';
+  gunGroup.animate(
+    [{opacity:0}, {opacity:1}],
+    {duration:90, easing:'ease-out', fill:'forwards'}
+  );
 
-  await animate(620, (t) => {
-    const turns = 2;
-    const phase = t * Math.PI * 2 * turns;
-    const amp = lerp(0.55, 1, t);
-    const lx = pivotX + Math.sin(phase) * orbitR * amp;
-    const ly = pivotY - Math.cos(phase) * orbitR * 0.55 * amp;
-    hookGroup.setAttribute('transform', `translate(${lx},${ly}) scale(1.5)`);
-    spinLoop(phase * 1.7, 13, 11);
-    updateRope(handOriginX, handOriginY, lx, ly);
-    armsUp(0.22 + Math.abs(Math.sin(phase)) * 0.1 * amp);
-  });
-
-  // 2c) eliberarea si zborul: bucla pleaca din varful invartirii spre tinta, pe un arc real,
-  // continuand sa se roteasca in aer in timp ce parcurge distanta (nu doar pe loc)
-  const releaseX = pivotX;
-  const releaseY = pivotY - orbitR * 0.55;
-  const arriveAboveY = hookTargetY - 60;
-
-  await animate(420, (t) => {
-    const tt = easeOutQuad(t);
-    const hx = lerp(releaseX, hookTargetX, tt);
-    const hy = lerp(releaseY, arriveAboveY, tt) - Math.sin(Math.PI * t) * 36;
-    hookGroup.setAttribute('transform', `translate(${hx},${hy}) scale(1.6)`);
-    spinLoop(t * Math.PI * 7, 13, 11);
-    updateRope(handOriginX, handOriginY, hx, hy);
-    armsUp(lerp(0.32, 0.5, t));
-  });
-
-  // 2d) coborarea de sus: bucla, inca larga si rotindu-se, plutea deasupra cuvantului (de la stage 2c) -
-  // acum cade vertical peste el de sus in jos, ca sa se vada limpede ca vine de deasupra si il inconjoara
-  const hookAtTextX = hookTargetX - btnRect.width/2 - btnRect.left;
-  const hookAtTextY = hookTargetY - btnCy;
-
-  const dropFromY = hookTargetY - 60;
-  const looseRx = btnRect.width/2 + 22;
-  const looseRy = btnRect.height/2 + 18;
-  const snugRx = btnRect.width/2 + 4;
-  const snugRy = btnRect.height/2 + 3;
-
-  resetLoop(13, 11);
-  await animate(220, (t) => {
-    const tt = easeOutQuad(t);
-    const hy = lerp(dropFromY, hookTargetY, tt);
-    const sc = lerp(1.6, 1, tt);
-    const rx = lerp(13, looseRx, tt);
-    const ry = lerp(11, looseRy, tt);
-    lassoLoop.setAttribute('rx', rx);
-    lassoLoop.setAttribute('ry', ry);
-    hookGroup.setAttribute('transform', `translate(${hookTargetX},${hy}) scale(${sc})`);
-    updateRope(handOriginX, handOriginY, hookTargetX, hy);
-  });
-
-  // butonul real devine invizibil chiar in momentul in care bucla ajunge la nivelul lui,
-  // ghost-ul ii preia locul exact, ca prinderea sa para continua
-  lessBtn.style.visibility = 'hidden';
-  ghostBtn.classList.add('active');
-  ghostBtn.style.transform = `translate(${hookAtTextX}px, ${hookAtTextY}px) scale(1)`;
-
-  // 2e) strangerea (cinch): bucla se trage usor spre interior, prinzand cuvantul strans
-  await animate(220, (t) => {
-    const tt = easeOutQuad(t);
-    lassoLoop.setAttribute('rx', lerp(looseRx, snugRx, tt));
-    lassoLoop.setAttribute('ry', lerp(looseRy, snugRy, tt));
-    const pulse = lerp(1, 0.95, tt);
-    ghostBtn.style.transform = `translate(${hookAtTextX}px, ${hookAtTextY}px) scale(${pulse})`;
-  });
-  ghostBtn.style.transform = `translate(${hookAtTextX}px, ${hookAtTextY}px) scale(1)`;
-
-  await new Promise(r => setTimeout(r, 180));
-
-  // 2f) tragerea: lasso-ul, cu cuvantul prins inauntru, e tras inapoi spre stickman in mai multe
-  // smucituri (jerks), nu printr-o alunecare continua - asa arata ca e tras cu efort, nu teleportat
-  const pullStartX = hookTargetX, pullStartY = hookTargetY;
-  const jerks = [0.22, 0.5, 0.78, 1];
-  let jerkFromX = pullStartX, jerkFromY = pullStartY, prevP = 0;
-
-  for (const p of jerks){
-    const segStartX = jerkFromX, segStartY = jerkFromY;
-    const targetX = lerp(pullStartX, handOriginX, p);
-    const targetY = lerp(pullStartY, handOriginY, p);
-    const segDur = 95 + (p - prevP) * 380;
-
-    await animate(segDur, (t) => {
-      const tt = easeOutQuad(t);
-      const hx = lerp(segStartX, targetX, tt);
-      const hy = lerp(segStartY, targetY, tt);
-
-      const globalT = lerp(prevP, p, tt);
-      lassoLoop.setAttribute('rx', lerp(snugRx, 9, globalT));
-      lassoLoop.setAttribute('ry', lerp(snugRy, 7.5, globalT));
-      hookGroup.setAttribute('transform', `translate(${hx},${hy}) scale(1)`);
-      updateRope(handOriginX, handOriginY, hx, hy);
-
-      const gx = hx - btnRect.width/2 - btnRect.left;
-      const gy = hy - btnCy;
-      ghostBtn.style.transform = `translate(${gx}px, ${gy}px) scale(${lerp(1, 0.9, globalT)})`;
-
-      armsUp(lerp(0.5, 1, globalT));
-    });
-
-    jerkFromX = targetX; jerkFromY = targetY; prevP = p;
-    await new Promise(r => setTimeout(r, 35));
-  }
-
-  hookLayer.classList.remove('active');
-  clearRope();
-
-  // ridicarea finala spre pozitia de cărat deasupra capului
-  await animate(260, (t) => {
-    const tt = easeInOutQuad(t);
-    armsUp(1);
-    const handY = lerp(handOriginY, groundY - 46, tt);
-    const gx = handOriginX - btnRect.width/2 - btnRect.left;
-    ghostBtn.style.transform = `translate(${gx}px, ${handY - btnCy}px)`;
-  });
-
-  await new Promise(r => setTimeout(r, 150));
-
-  // 3) stickman alearga spre cos, ducand butonul ridicat deasupra capului
-  const arriveX = trashCx - 28;
-  await animate(1000, (t) => {
-    const tt = easeRun(t);
-    const x = lerp(approachX, arriveX, tt);
-    const handY = groundY - 46;
-    const bob = walkCycle(t * 6, true);
-    const tilt = Math.min(6, t * 24);
-    armsUp(1);
-    setStickman(x, groundY, scale, true, bob, tilt);
-    const ghostX = x + 30 - btnRect.width/2 - btnRect.left;
-    ghostBtn.style.transform = `translate(${ghostX}px, ${handY - btnCy + bob}px)`;
-  });
-
-  await new Promise(r => setTimeout(r, 150));
-
-  // 4) aruncarea propriu-zisa: arcul butonului catre interiorul cosului
-  const throwStartX = arriveX + 30 - btnRect.width/2 - btnRect.left;
-  const throwStartY = (groundY - 46) - btnCy;
-  const throwEndX = trashCx - btnRect.width/2 - btnRect.left;
-  const throwEndY = trashCy - btnCy;
-
-  await animate(650, (t) => {
-    const tt = t;
-    const arcLift = -90 * Math.sin(Math.PI * t);
-    const x = lerp(throwStartX, throwEndX, tt);
-    const y = lerp(throwStartY, throwEndY, tt) + arcLift;
-    const rot = lerp(0, 380, tt);
-    const sc = lerp(1, 0.25, easeInOutQuad(t));
-    ghostBtn.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sc})`;
-    ghostBtn.style.opacity = t > 0.75 ? String(1 - (t-0.75)/0.25) : '1';
-
-    // bratele stickman-ului "elibereaza" obiectul in prima parte a aruncarii
-    if (t < 0.3){
-      armsUp(1 - t/0.3*0.4);
-    }
-  });
-
-  ghostBtn.classList.remove('active');
-  ghostBtn.style.opacity = '1';
-
-  // gulp-ul cosului exact cand ajunge butonul, apoi dispare instant
-  trash.classList.remove('gulp', 'instant-hide');
-  void trash.offsetWidth;
-  trash.classList.add('gulp');
-
-  setTimeout(() => {
-    trash.classList.add('instant-hide');
-  }, 400);
-
-  // 5) stickman alearga si se retrage din scena
   await new Promise(r => setTimeout(r, 120));
+
+  // 3) FOC! - flash la teava + glont in zbor, pornind exact din teava pistolului din mana
+  fireFlash();
+
+  const muzzle = gunMuzzleScreenPos();
+
+  bulletProj.style.display = 'block';
+  bulletProj.style.left = muzzle.x + 'px';
+  bulletProj.style.top = muzzle.y + 'px';
+
+  const bulletDur = 90;
+  const bulletStart = performance.now();
+  await new Promise(resolve => {
+    function bulletFrame(now){
+      const t = Math.min(1, (now - bulletStart) / bulletDur);
+      const bx = lerp(muzzle.x, btnCx, t);
+      const by = lerp(muzzle.y, btnCy, t);
+      bulletProj.style.left = bx + 'px';
+      bulletProj.style.top = by + 'px';
+      bulletProj.style.opacity = t < 0.9 ? '1' : String(1 - (t-0.9)/0.1);
+      if(t < 1) requestAnimationFrame(bulletFrame);
+      else resolve();
+    }
+    requestAnimationFrame(bulletFrame);
+  });
+  bulletProj.style.display = 'none';
+
+  // 4) IMPACT: butonul real dispare, iar exact in locul lui apare gaura de glont + explozie
+  lessBtn.style.visibility = 'hidden';
+  const holeEl = createBulletHole(btnCx, btnCy);
+
+  // tremur scurt al ecranului
+  document.body.animate([
+    {transform:'translate(0,0)'},
+    {transform:'translate(-4px, 3px)'},
+    {transform:'translate(5px, -2px)'},
+    {transform:'translate(-3px, 1px)'},
+    {transform:'translate(0,0)'}
+  ], {duration:180, easing:'ease-out'});
+
+  triggerExplosion(btnCx, btnCy);
+
+  await new Promise(r => setTimeout(r, 350));
+
+  // 5) stickman pleaca din scena spre dreapta, cu pistolul tot in mana
   const exitX = window.innerWidth + 80;
-  await animate(950, (t) => {
-    const x = lerp(arriveX, exitX, easeRun(t));
-    const bob = walkCycle(t * 6 + 0.5);
+  await animate(900, (t) => {
+    const x = lerp(approachX, exitX, easeRun(t));
+    const runT = t * 5.5 + 0.5;
+    const bob = walkCycle(runT);
     const tilt = Math.min(8, t * 30);
     setStickman(x, groundY, scale, true, bob, tilt);
+
+    // acelasi unghi de brat ca in walkCycle, ca pistolul sa ramana lipit de mana cat alearga
+    const armAngle = -Math.sin(runT * Math.PI * 2) * 48;
+    positionGunInHand(x, groundY + (bob || 0), scale, true, tilt, armAngle);
   });
 
   stickmanLayer.classList.remove('active');
+  gunLayer.style.display = 'none';
 
-  setTimeout(resetLessButton, RESET_AFTER_MS);
+  // gaura de glont ramane vizibila un moment, apoi dispare la reset
+  setTimeout(() => {
+    if(holeEl && holeEl.parentNode) holeEl.parentNode.removeChild(holeEl);
+    setTimeout(resetLessButton, 400);
+  }, RESET_AFTER_MS - 600);
 }
 
 function resetLessButton(){
@@ -1110,12 +1181,13 @@ function resetLessButton(){
   lessBtn.textContent = LESS_TEXT;
 
   ghostBtn.style.transform = '';
-  hookLayer.classList.remove('active');
-  clearRope();
+  ghostBtn.classList.remove('active');
 
-  trash.classList.remove('show');
-  trash.classList.remove('gulp');
-  trash.classList.remove('instant-hide');
+  bigFont = BTN_START_FONT;
+  bigPadV = BTN_START_PAD_V;
+  bigPadH = BTN_START_PAD_H;
+  btn.style.fontSize = '';
+  btn.style.padding = '';
 }
 
 function triggerLess(){
